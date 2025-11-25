@@ -1,0 +1,12 @@
+#!/bin/bash
+# 获取脚本所在目录
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# 设置环境变量，优先使用目录内的库
+export LD_LIBRARY_PATH=$DIR/lib:$LD_LIBRARY_PATH
+export QT_PLUGIN_PATH=$DIR/plugins
+export QML2_IMPORT_PATH=$DIR/qml
+export QT_QPA_PLATFORM_PLUGIN_PATH=$DIR/plugins/platforms
+
+# 运行程序
+exec "$DIR/cmdbox" "$@"
