@@ -9,6 +9,11 @@ ApplicationWindow {
     height: 600
     title: "CMD BOX"
 
+    Component.onCompleted: {
+        // Ensure data is loaded when window is ready
+        commandManager.initialize()
+    }
+
     Shortcut {
         sequence: "Ctrl+F"
         onActivated: searchField.forceActiveFocus()

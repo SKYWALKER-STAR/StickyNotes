@@ -36,6 +36,7 @@ public:
     Q_INVOKABLE void setFilter(const QString &filterText);
     Q_INVOKABLE bool exportCommands(const QUrl &fileUrl);
     Q_INVOKABLE bool importCommands(const QUrl &fileUrl);
+    Q_INVOKABLE void initialize(); // Delayed initialization
 
     // Persistence
     void loadCommands();
@@ -48,6 +49,7 @@ private:
     QList<CommandEntry> m_filteredCommands;
     QString m_filterText;
     QString m_storagePath;
+    bool m_initialized = false;
 };
 
 #endif // COMMANDMANAGER_H

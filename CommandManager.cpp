@@ -11,14 +11,14 @@
 CommandManager::CommandManager(QObject *parent)
     : QAbstractListModel(parent)
 {
-    // Set storage path
+    // Set storage path only, defer loading for faster startup
     QString dataLocation = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QDir dir(dataLocation);
     if (!dir.exists()) {
         dir.mkpath(".");
     }
     m_storagePath = dataLocation + "/commands.json";
-    loadCommands();
+    // Don't load commands here - will be loaded on demand or via initialize()
 }
 
 int CommandManager::rowCount(const QModelIndex &parent) const
@@ -58,6 +58,9 @@ QHash<int, QByteArray> CommandManager::roleNames() const
 
 void CommandManager::addCommand(const QString &title, const QString &command, const QString &description)
 {
+    if (!m_initialized) {
+        initialize();
+    }
     m_allCommands.append({title, command, description});
     saveCommands();
     updateFilteredCommands();
@@ -115,11 +118,25 @@ void CommandManager::copyToClipboard(const QString &text)
 
 void CommandManager::setFilter(const QString &filterText)
 {
+    // Ensure data is loaded before filtering
+    if (!m_initialized) {
+        initialize();
+    }
+    
     if (m_filterText == filterText)
         return;
     
     m_filterText = filterText;
     updateFilteredCommands();
+}
+
+void CommandManager::initialize()
+{
+    if (m_initialized)
+        return;
+    
+    m_initialized = true;
+    loadCommands();
 }
 
 void CommandManager::updateFilteredCommands()
@@ -183,6 +200,10 @@ void CommandManager::saveCommands()
 
 bool CommandManager::exportCommands(const QUrl &fileUrl)
 {
+    if (!m_initialized) {
+        initialize();
+    }
+    
     QString filePath = fileUrl.toLocalFile();
     if (filePath.isEmpty())
         return false;
