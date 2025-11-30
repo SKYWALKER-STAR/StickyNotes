@@ -68,6 +68,7 @@ void CommandManager::addCommand(const QString &title, const QString &command, co
     if (!m_initialized) {
         initialize();
     }
+    printf("Hello world!\n");
     m_allCommands.append({title, command, description, group, false});
     saveCommands();
     updateFilteredCommands();
