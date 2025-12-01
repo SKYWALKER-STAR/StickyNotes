@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
 
     // 推荐：注册为 QML 单例
-    qmlRegisterSingletonInstance("CommandManager", 1, 0, "CommandManager", &commandManager);
+    //qmlRegisterSingletonInstance("CommandManager", 1, 0, "CommandManager", &commandManager);
 
     // 如果仍想保留上下文属性，也可以同时设置（可选）
     engine.rootContext()->setContextProperty("commandManager", &commandManager);

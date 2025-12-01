@@ -7,7 +7,7 @@ ListView {
     anchors.fill: parent
     model: commandManager
     clip: true
-    spacing: 10
+    spacing: 10 
     property Item commandDialog
     property ToolTip copyNotification
     property var commandManager

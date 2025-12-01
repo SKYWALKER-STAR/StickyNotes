@@ -1,4 +1,5 @@
 #include "CommandManager.h"
+#include <QDebug>
 #include <QGuiApplication>
 #include <QClipboard>
 #include <QFile>
@@ -68,7 +69,7 @@ void CommandManager::addCommand(const QString &title, const QString &command, co
     if (!m_initialized) {
         initialize();
     }
-    printf("Hello world!\n");
+
     m_allCommands.append({title, command, description, group, false});
     saveCommands();
     updateFilteredCommands();
@@ -126,6 +127,30 @@ void CommandManager::editFolder(int index, const QString &title, const QString &
     saveCommands();
     updateFilteredCommands();
     emit groupsChanged();
+}
+QVariantList CommandManager::commandsInFolder(const QString &folderName) const {
+    QVariantList out;
+
+    //Debug
+    for (const CommandEntry &e : m_allCommands) {
+        qDebug() << "CommandEntry:" << e.title << e.group << e.isFolder;
+    }
+    for (const auto &c : m_allCommands) {
+        // assuming folder membership stored in c.group == folderName
+        if (!c.isFolder && c.group == folderName) {
+            QVariantMap m;
+            m["title"] = c.title;
+            m["commandContent"] = c.command;
+            m["description"] = c.description;
+            m["group"] = c.group;
+            m["isFolder"] = false;
+            out << m;
+            qDebug() << "QVM:" << m;
+        }
+    }
+    // Debug
+    qDebug() << "QVL:" << out;
+    return out;
 }
 
 void CommandManager::removeCommand(int index)
@@ -328,10 +353,20 @@ bool CommandManager::importCommands(const QUrl &fileUrl)
 QStringList CommandManager::groups()
 {
     if (!m_initialized) initialize();
+
+    //Debug
+    //for (const CommandEntry &e : m_allCommands) {
+    //    qDebug() << "CommandEntry:" << e.title << e.group << e.isFolder;
+    //}
     QSet<QString> set;
     set.insert("All");
     for (const auto &e : m_allCommands) {
-        if (!e.group.isEmpty()) set.insert(e.group);
+        if (e.isFolder) {
+            set.insert(e.title);
+        }
+        else if (!e.group.isEmpty()) {
+            set.insert(e.group);
+        }
     }
     QStringList list;
     for (const QString &group : set)
@@ -339,5 +374,7 @@ QStringList CommandManager::groups()
     list.sort(Qt::CaseInsensitive);
     list.removeAll("All");
     list.prepend("All");
+    // Debug
+    //qDebug() << "groups:" << list;                          // 方式1
     return list;
 }

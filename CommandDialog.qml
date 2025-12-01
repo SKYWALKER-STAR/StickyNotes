@@ -4,14 +4,24 @@ import QtQuick.Layouts
 
 Dialog {
     id: dialog
+    property var commandManager 
     property int editIndex: -1
     property bool folderMode: false
+    
     title: folderMode ? (editIndex === -1 ? "添加新分组" : "修改分组")
-                  : (editIndex === -1 ? "添加新命令" : "修改命令")
+                      : (editIndex === -1 ? "添加新命令" : "修改命令")
     modal: true
     standardButtons: Dialog.Ok | Dialog.Cancel
     anchors.centerIn: parent
     width: 400
+
+    // Helper function to safely get the group text
+    function groupText() {
+        if (!groupField) return ""
+        return groupField.editable
+               ? (groupField.editText !== "" ? groupField.editText : groupField.currentText)
+               : groupField.currentText
+    }
 
     function openForAdd() {
         editIndex = -1
@@ -19,23 +29,22 @@ Dialog {
         titleFieldCmd.text = ""
         commandField.text = ""
         descField.text = ""
+        if (groupField) { groupField.currentIndex = -1; groupField.editText = "" }
         dialog.open()
-        console.log("Hello from dialog openForAdd")
     }
 
     function openForAddFolder() {
         editIndex = -1
         folderMode = true
         titleFieldFolder.text = ""
-        commandField.text = ""
-        descField.text = ""
+        if (groupField) { groupField.currentIndex = -1; groupField.editText = "" }
         dialog.open()
-        console.log("Hello from dialog openForAddFolder")
     }
 
     function openForEdit(index, title, cmd, desc, group, isFolder) {
         editIndex = index
-        folderMode = !isFolder
+        folderMode = isFolder // Corrected: Do not invert!
+        
         if (folderMode) {
             titleFieldFolder.text = title
         } else {
@@ -43,6 +52,7 @@ Dialog {
         }
         commandField.text = cmd
         descField.text = desc
+        
         if (groupField) {
             const g = (typeof group !== 'undefined') ? group : ""
             const i = g !== "" ? groupField.find(g) : -1
@@ -59,36 +69,51 @@ Dialog {
 
     onAccepted: {
         console.log("Into onAccepted")
-        if (commandManager)
-            if (folderMode) {
-                console.log("FolderMode")
-                if (editIndex === -1)
-                    commandManager.addFolder(titleFieldFolder.text, groupField.text)
-                else
-                    commandManager.editFolder(editIndex, titleFieldFolder.text, groupField.text)
-            } else {
-                console.log("!FoldMode")
-                if (editIndex === -1)
-                    commandManager.addCommand(titleFieldCmd.text, commandField.text, descField.text, groupField.text)
-                else
-                    commandManager.editCommand(editIndex, titleFieldCmd.text, commandField.text, descField.text, groupField.text)
-            }
-        if (!commandManager)
+        
+        // 1. Validation first (with braces)
+        if (!commandManager) {
             console.log("onAccepted: !commandManager")
             return
-        if (folderMode && titleFieldFolder.text === "")
-            console.log("onAccepted: folderMode")
-            return
-        if (!folderMode && titleFieldCmd.text === "")
-            console.log("onAccepted: !folderMode && titleFieldCmd.text")
-            return
-        if (!folderMode && commandField.text === "")
-            console.log("onAccepted: !folderMode && commandField.text")
-            return
+        }
+        
+        if (folderMode) {
+            if (titleFieldFolder.text.trim() === "") {
+                console.log("onAccepted: folder title empty")
+                return
+            }
+        } else {
+            if (titleFieldCmd.text.trim() === "") {
+                console.log("onAccepted: cmd title empty")
+                return
+            }
+            if (commandField.text.trim() === "") {
+                console.log("onAccepted: cmd content empty")
+                return
+            }
+        }
+
+        // 2. Get group text
+        const g = groupText()
+
+        // 3. Execute logic
+        if (folderMode) {
+            console.log("Processing FolderMode")
+            if (editIndex === -1)
+                commandManager.addFolder(titleFieldFolder.text, g)
+            else
+                commandManager.editFolder(editIndex, titleFieldFolder.text, g)
+        } else {
+            console.log("Processing CommandMode")
+            if (editIndex === -1)
+                commandManager.addCommand(titleFieldCmd.text, commandField.text, descField.text, g)
+            else
+                commandManager.editCommand(editIndex, titleFieldCmd.text, commandField.text, descField.text, g)
+        }
     }
 
-    ColumnLayout {
-        anchors.fill: parent
+    // Corrected: Use contentItem to avoid covering buttons
+    contentItem: ColumnLayout {
+        width: dialog.width
         spacing: 10
 
         TextField {
@@ -100,9 +125,8 @@ Dialog {
 
         TextField {
             id: titleFieldFolder
-            placeholderText: "分组"
+            placeholderText: "分组名称"
             Layout.fillWidth: true
-            height: 100
             visible: folderMode
         }
 
@@ -112,9 +136,7 @@ Dialog {
             Layout.fillWidth: true
             Layout.preferredHeight: folderMode ? 0 : 100
             visible: !folderMode
-            background: Rectangle {
-                border.color: "#ccc"
-            }
+            background: Rectangle { border.color: "#ccc" }
         }
 
         TextField {
@@ -126,15 +148,14 @@ Dialog {
 
         ComboBox {
             id: groupField
-            //placeholderText: "分组 (可选)"
             editable: true
             model: commandManager ? commandManager.groups : []
-            Component.onCompleted: {
-                if (editable && editText === "")
-                    editText = ""
-            }
             Layout.fillWidth: true
-            visible: !folderMode
+            // Make group selection visible for folders too, if desired
+            // visible: !folderMode 
+            Component.onCompleted: {
+                if (editable && editText === "") editText = ""
+            }
         }
     }
 }
