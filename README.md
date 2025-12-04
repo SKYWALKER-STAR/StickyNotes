@@ -1,9 +1,20 @@
 <div align="center">
-# CMDBOX <br>
+<div style="margin: 20px 0;">
+  <img src="./Logo.png">
+</div>
+
+# CMDBOX
+<div align="center">
+  <div style="background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%); border-radius: 15px; padding: 25px; text-align: center;">
+    <p>
+      <a href="https://aibox.richaibox.com"><img src="https://img.shields.io/date/1764827464?style=plastic"></a>
+    </p>
+  </div>
+</div>
 </div>
 CMDBOX is a lightweight command management tool for operations engineers – record, search and copy frequently used commands fast.
 
-## Features
+## Features 💎
 
 * **Command management** – Add, edit and delete frequently used commands.
 * **One‑click copy** – Left‑click the list item or press the dedicated Copy button to place the command on the clipboard with a toast notification.
@@ -14,12 +25,12 @@ CMDBOX is a lightweight command management tool for operations engineers – rec
   * `Ctrl+N` Open the Add dialog
 * **Cross‑platform** – Linux and Windows (build locally on each platform).
 
-## Screenshots
+## Screenshots 📸
 <div align="center">
 <img src="./capture.png",alt="example">
 </div>
 
-## Build
+## Build 📥︎
 
 ### Dependencies
 
@@ -67,7 +78,7 @@ cmake --build . -j
 ./cmdbox.exe
 ```
 
-## Packaging
+## Packaging 📦
 
 ### CPack (Deb + Tarball)
 After building:
@@ -87,7 +98,7 @@ Run:
 ```
 Resulting `.deb` will include required Qt runtime pieces.
 
-## Import / Export
+## Import / Export ⛵︎
 Use menu (⋮) → Import / Export. JSON schema is an array of objects:
 ```json
 [
@@ -95,7 +106,7 @@ Use menu (⋮) → Import / Export. JSON schema is an array of objects:
 ]
 ```
 
-## Troubleshooting
+## Troubleshooting ❓︎
 | Issue | Cause | Fix |
 |-------|-------|-----|
 | Qt plugin "xcb" not loading | Missing system libs (`libxcb-cursor0`, etc.) | `sudo apt install libxcb-cursor0` |
@@ -108,6 +119,6 @@ export QT_DEBUG_PLUGINS=1
 ./cmdbox
 ```
 
-## License
+## License ⚖
 
 MIT License
