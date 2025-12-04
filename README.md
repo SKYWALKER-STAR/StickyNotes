@@ -1,13 +1,13 @@
 <div align="center">
 <div style="margin: 20px 0;">
-  <img src="./Logo.png">
+  <img src="https://github.com/SKYWALKER-STAR/CMDBOX/blob/main/Logo.png">
 </div>
 
 # CMDBOX
 <div align="center">
   <div style="background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%); border-radius: 15px; padding: 25px; text-align: center;">
     <p>
-      <a href="https://aibox.richaibox.com"><img src="https://img.shields.io/date/1764827464?style=plastic"></a>
+      <img src="https://img.shields.io/date/1764827464?style=plastic">
     </p>
   </div>
 </div>
@@ -27,7 +27,7 @@ CMDBOX is a lightweight command management tool for operations engineers – rec
 
 ## Screenshots 📸
 <div align="center">
-<img src="./capture.png",alt="example">
+<img src="https://github.com/SKYWALKER-STAR/CMDBOX/blob/main/capture.png",alt="example">
 </div>
 
 ## Build 📥︎
