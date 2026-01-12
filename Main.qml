@@ -152,7 +152,7 @@ ApplicationWindow {
         anchors.fill: parent
         model: commandManager
         clip: true
-        spacing: 12 
+        spacing: 2  // 减小间距，让 folder 紧密排列
         signal addFolderRequested()
         signal addCommandRequested()
         
