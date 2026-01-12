@@ -253,69 +253,6 @@ ApplicationWindow {
         signal addFolderRequested()
         signal addCommandRequested()
         
-        footer: Item {
-            width: listView.width
-            height: 78
-            z: 2
-
-            ToolButton {
-                id: addButton
-                anchors.centerIn: parent
-                text: "+"
-                font.pixelSize: 22
-                width: 56
-                height: 56
-                onClicked: addMenu.open()
-                background: Rectangle {
-                    color: addButton.pressed ? primaryDark : primary
-                    radius: 28
-                }
-                contentItem: Label { text: addButton.text; color: "white"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-                scale: addButton.pressed ? 0.9 : 1.0
-                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
-            }
-            Menu {
-                id: addMenu
-                z: 3
-                x: addButton.x
-                y: addButton.y + addButton.height + 6
-                MenuItem {
-                    text: "Add Folder"
-                    onTriggered: {
-                        if (commandDialog && typeof commandDialog.openForAddFolder === 'function') {
-                            commandDialog.openForAddFolder()
-                        } else {
-                            addFolderRequested()
-                        }
-                    }
-                }
-                MenuItem {
-                    text: "Add Command"
-                    onTriggered: {
-                        if (commandDialog && typeof commandDialog.openForAdd === 'function') {
-                            commandDialog.openForAdd()
-                        } else {
-                            addCommandRequested()
-                        }
-                    }
-                }
-            }
-        }
-        onAddFolderRequested: {
-            if (commandDialog && typeof commandDialog.openForAddFolder === 'function') {
-                commandDialog.openForAddFolder()
-            } else {
-                console.log("Add folder requested but commandDialog unavailable")
-            }
-        }
-        onAddCommandRequested: {
-            if (commandDialog && typeof commandDialog.openForAdd === 'function') {
-                commandDialog.openForAdd()
-            } else {
-                console.log("Add command requested but commandDialog unavailable")
-            }
-        }
-        
         delegate: ItemDelegate {
             width: listView.width
             // 动态计算高度：如果是 Folder，高度由 folderColumn 决定
