@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts
 import QtQuick.Dialogs
 //import "commandManager"
+import CommandManager 1.0
 
 ApplicationWindow {
     id: appWindow
@@ -13,6 +14,9 @@ ApplicationWindow {
     minimumHeight: 400
     title: "CMD BOX"
 
+    // CommandManager 引用（从 C++ 上下文属性注入）
+    // property var commandManager: commandManager
+    
     // 全局主题变量（经典黑白 - 现代极简）
     property color bgColor: "#ffffff"      // 纯白背景
     property color cardColor: "#ffffff"
@@ -39,7 +43,6 @@ ApplicationWindow {
     Component.onCompleted: {
         if (commandManager)
             commandManager.initialize()
-        console.log('Hello')
     }
 
     Shortcut {
@@ -676,7 +679,7 @@ ApplicationWindow {
             textPrimary: appWindow.textPrimary
             textSecondary: appWindow.textSecondary
             
-            commandManager: commandManager
+            commandManager: CommandManager
             
             onGroupSelected: function(groupName) {
                 // 可选：按分组筛选
@@ -697,6 +700,16 @@ ApplicationWindow {
             Behavior on Layout.preferredWidth {
                 NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
             }
+
+            onCommandManagerChanged: {
+                console.log("SidebarTreeView: commandManager changed:", commandManager)
+                if (commandManager) {
+                    console.log("CommandManager is valid")
+                    treeList.model = treeList.buildTreeModel()
+                } else {
+                    console.log("CommandManager is null!")
+                }
+            }
         }
         
         // 主内容区域
@@ -704,7 +717,7 @@ ApplicationWindow {
             id: listView
             Layout.fillWidth: true
             Layout.fillHeight: true
-            model: commandManager
+            model: CommandManager
             clip: true
             spacing: 2  // 减小间距，让 folder 紧密排列
             signal addFolderRequested()
@@ -732,8 +745,8 @@ ApplicationWindow {
 
             onClicked: {
                 if (isFolder) return
-                if (!commandManager) return
-                commandManager.copyToClipboard(commandContent)
+                if (!CommandManager) return
+                CommandManager.copyToClipboard(commandContent)
                 if (copyNotification) {
                     copyNotification.text = "已复制: " + title
                     copyNotification.open()
@@ -772,8 +785,8 @@ ApplicationWindow {
                         text: "复制"
                         theme: "primary"
                         onClicked: {
-                            if (!commandManager) return
-                            commandManager.copyToClipboard(commandContent)
+                            if (!CommandManager) return
+                            CommandManager.copyToClipboard(commandContent)
                             if (copyNotification) {
                                 copyNotification.text = "已复制: " + title
                                 copyNotification.open()
@@ -792,7 +805,7 @@ ApplicationWindow {
                         text: "删除"
                         theme: "danger"
                         onClicked: {
-                            if (commandManager) commandManager.removeCommand(index)
+                            if (CommandManager) CommandManager.removeCommand(index)
                         }
                     }
                     CButton {
@@ -814,23 +827,23 @@ ApplicationWindow {
                     interactive: false // 嵌套列表通常禁止独立滚动，随外层滚动
 
                     // 使用 dataList 快照 + Connections 以便在模型变化时刷新
-                    property var dataList: commandManager ? commandManager.commandsInFolder(title) : []
+                    property var dataList: CommandManager ? CommandManager.commandsInFolder(title) : []
                     model: dataList
                     Connections {
-                        target: commandManager
+                        target: CommandManager
                         function onCommandsChanged() {
-                            nested.dataList = commandManager ? commandManager.commandsInFolder(title) : []
+                            nested.dataList = CommandManager ? CommandManager.commandsInFolder(title) : []
                         }
                         function onGroupsChanged() {
-                            nested.dataList = commandManager ? commandManager.commandsInFolder(title) : []
+                            nested.dataList = CommandManager ? CommandManager.commandsInFolder(title) : []
                         }
                     }
 
                     delegate: ItemDelegate {
                         // 点击嵌套元素进行复制
                         onClicked: {
-                            if (!commandManager) return
-                            commandManager.copyToClipboard(commandContent)
+                            if (!CommandManager) return
+                            CommandManager.copyToClipboard(commandContent)
                             if (copyNotification) {
                                 copyNotification.text = "已复制: " + title
                                 copyNotification.open()
@@ -875,8 +888,8 @@ ApplicationWindow {
                                     text: "复制"
                                     theme: "primary"
                                     onClicked: {
-                                        if (commandManager) {
-                                            commandManager.copyToClipboard(commandContent)
+                                        if (CommandManager) {
+                                            CommandManager.copyToClipboard(commandContent)
                                             if (copyNotification) {
                                                 copyNotification.text = "已复制: " + title
                                                 copyNotification.open()
@@ -896,7 +909,7 @@ ApplicationWindow {
                                     text: "删除"
                                     theme: "danger"
                                     onClicked: {
-                                        if (commandManager) commandManager.removeCommand(sourceIndex)
+                                        if (CommandManager) CommandManager.removeCommand(sourceIndex)
                                     }
                                 }
 
@@ -944,7 +957,7 @@ ApplicationWindow {
         property int editIndex: -1
         property bool folderMode: false
         
-        model: commandManager
+        model: CommandManager
         
         modal: true
         // 使用 x 和 y 手动居中，确保不会超出窗口
@@ -1434,7 +1447,7 @@ ApplicationWindow {
         nameFilters: ["JSON files (*.json)", "All files (*)"]
         fileMode: FileDialog.OpenFile
         onAccepted: {
-            if (commandManager && commandManager.importCommands(selectedFile)) {
+            if (CommandManager && CommandManager.importCommands(selectedFile)) {
                 copyNotification.text = "数据导入成功"
                 copyNotification.open()
             } else {
@@ -1451,7 +1464,7 @@ ApplicationWindow {
         fileMode: FileDialog.SaveFile
         currentFile: "commands.json"
         onAccepted: {
-            if (commandManager && commandManager.exportCommands(selectedFile)) {
+            if (CommandManager && CommandManager.exportCommands(selectedFile)) {
                 copyNotification.text = "数据导出成功"
                 copyNotification.open()
             } else {

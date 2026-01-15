@@ -3,29 +3,53 @@
 #include <QQmlContext>
 #include <QTimer>
 #include <QQmlEngine>
+#include <QDebug> // 引入 qDebug
 #include "CommandManager.h"
 
 int main(int argc, char *argv[])
 {
+    qDebug() << "Starting application..."; // 添加调试日志
+
     QGuiApplication app(argc, argv);
 
+    qDebug() << "QGuiApplication initialized.";
+
     CommandManager commandManager;
+    qDebug() << "CommandManager instance created.";
 
     QQmlApplicationEngine engine;
 
     // 推荐：注册为 QML 单例
-    //qmlRegisterSingletonInstance("CommandManager", 1, 0, "CommandManager", &commandManager);
+    if (qmlRegisterSingletonInstance("CommandManager", 1, 0, "CommandManager", &commandManager)) {
+        qDebug() << "CommandManager registered as QML singleton successfully.";
+    } else {
+        qCritical() << "Failed to register CommandManager as QML singleton!";
+    }
 
     // 如果仍想保留上下文属性，也可以同时设置（可选）
-    engine.rootContext()->setContextProperty("commandManager", &commandManager);
+    // engine.rootContext()->setContextProperty("commandManager", &commandManager);
 
     QObject::connect(
         &engine, &QQmlApplicationEngine::objectCreationFailed,
-        &app, []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
+        &app, []() { 
+            qCritical() << "QML object creation failed!";
+            QCoreApplication::exit(-1); 
+        }, Qt::QueuedConnection);
 
+    qDebug() << "Loading Main.qml...";
     engine.loadFromModule("cpaste_quick", "Main");
 
+    if (engine.rootObjects().isEmpty()) {
+        qCritical() << "Failed to load Main.qml!";
+        return -1;
+    } else {
+        qDebug() << "Main.qml loaded successfully.";
+    }
+
     // Initialize data asynchronously after UI is shown
+    qDebug() << "Initializing CommandManager...";
     QTimer::singleShot(0, &commandManager, &CommandManager::initialize);
+
+    qDebug() << "Starting event loop...";
     return app.exec();
 }

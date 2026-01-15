@@ -27,6 +27,13 @@ Rectangle {
     signal groupSelected(string groupName)
     signal itemClicked(int index, bool isFolder)
     
+    // 当 commandManager 变化时刷新
+    onCommandManagerChanged: {
+        if (commandManager) {
+            treeList.model = treeList.buildTreeModel()
+        }
+    }
+    
     color: bgColor
     
     // 左边框线
@@ -89,7 +96,29 @@ Rectangle {
             clip: true
             spacing: 2
             
-            model: buildTreeModel()
+            model: []  // 初始为空，等待 commandManager 加载
+            
+            Component.onCompleted: {
+                console.log("SidebarTreeView ListView completed")
+                // 延迟一下，等待 commandManager 初始化
+                refreshTimer.start()
+            }
+            
+            // 延迟刷新定时器
+            Timer {
+                id: refreshTimer
+                interval: 100
+                repeat: false
+                onTriggered: {
+                    if (commandManager) {
+                        console.log("SidebarTreeView: refreshing with commandManager")
+                        treeList.model = treeList.buildTreeModel()
+                    } else {
+                        console.log("SidebarTreeView: commandManager still null, retry")
+                        refreshTimer.start()
+                    }
+                }
+            }
             
             // 监听数据变化
             Connections {
@@ -103,7 +132,10 @@ Rectangle {
             }
             
             function buildTreeModel() {
-                if (!commandManager) return []
+                if (!commandManager) {
+                    console.log("SidebarTreeView: commandManager is null")
+                    return []
+                }
                 
                 var result = []
                 
@@ -121,12 +153,15 @@ Rectangle {
                 
                 // 获取所有分组（文件夹）
                 var groups = commandManager.groups
+                console.log("SidebarTreeView: groups =", JSON.stringify(groups))
+                
                 for (var i = 0; i < groups.length; i++) {
                     var groupName = groups[i]
                     if (groupName === "All") continue
                     
                     // 获取该分组下的命令数量
                     var commands = commandManager.commandsInFolder(groupName)
+                    console.log("SidebarTreeView: group", groupName, "has", commands.length, "commands")
                     
                     result.push({
                         name: groupName,
@@ -157,6 +192,7 @@ Rectangle {
                     }
                 }
                 
+                console.log("SidebarTreeView: buildTreeModel result count =", result.length)
                 return result
             }
             

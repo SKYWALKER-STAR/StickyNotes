@@ -229,6 +229,7 @@ void CommandManager::initialize()
     
     m_initialized = true;
     loadCommands();
+    qDebug() << "CommandManager initialized.";
 }
 
 void CommandManager::updateFilteredCommands()
@@ -401,4 +402,9 @@ QStringList CommandManager::groups()
     // Debug
     //qDebug() << "groups:" << list;                          // 方式1
     return list;
+}
+
+void CommandManager::debug()
+{
+    qDebug() << "Debug information:";
 }

@@ -46,6 +46,7 @@ public:
     Q_INVOKABLE QVariantList commandsInFolder(const QString &folderName) const;
     Q_INVOKABLE void initialize(); // Delayed initialization
     Q_INVOKABLE QStringList groups();
+    Q_INVOKABLE void debug();
 
     Q_PROPERTY(QStringList groups READ groups NOTIFY groupsChanged)
 
