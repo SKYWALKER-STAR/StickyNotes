@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Popup {
-//Dialog {
     id: preview
     modal: true
     focus: true

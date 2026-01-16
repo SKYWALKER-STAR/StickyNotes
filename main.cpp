@@ -19,15 +19,12 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
 
-    // 推荐：注册为 QML 单例
+    // 注册为 QML 单例
     if (qmlRegisterSingletonInstance("CommandManager", 1, 0, "CommandManager", &commandManager)) {
         qDebug() << "CommandManager registered as QML singleton successfully.";
     } else {
         qCritical() << "Failed to register CommandManager as QML singleton!";
     }
-
-    // 如果仍想保留上下文属性，也可以同时设置（可选）
-    // engine.rootContext()->setContextProperty("commandManager", &commandManager);
 
     QObject::connect(
         &engine, &QQmlApplicationEngine::objectCreationFailed,
@@ -37,8 +34,11 @@ int main(int argc, char *argv[])
         }, Qt::QueuedConnection);
 
     qDebug() << "Loading Main.qml...";
+    
+    //const QUrl url(QStringLiteral(u"qrc:/qt/qml/cpaste_quick/qml/Main.qml"));
     engine.loadFromModule("cpaste_quick", "Main");
-
+    //engine.loadFromModule("cpaste_quick", "qml/Main");
+    //engine.load(url);
     if (engine.rootObjects().isEmpty()) {
         qCritical() << "Failed to load Main.qml!";
         return -1;

@@ -360,7 +360,7 @@ MenuBar {
             
             Action {
                 text: qsTr("关于 CMD BOX")
-                onTriggered: aboutDialog.open()
+                onTriggered: aboutDialogView.open()
             }
         }
     }

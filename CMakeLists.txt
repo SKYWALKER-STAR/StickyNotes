@@ -14,16 +14,15 @@ qt_add_executable(cmdbox
     CommandManager.h
 )
 
+# 生成相对当前源目录的相对路径，如 qml/Foo.qml
+file(GLOB QML_FILES_ALL
+     RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+     "qml/*.qml")
+
 qt_add_qml_module(cmdbox
     URI cpaste_quick
     QML_FILES
-    Main.qml
-    AppHeader.qml
-    CommandBlok.qml
-    CButton.qml
-    SidebarTreeView.qml
-    HeadManubarView.qml
-    ShortcutGuideDialog.qml
+    ${QML_FILES_ALL}
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -53,7 +52,7 @@ set(CPACK_PACKAGE_NAME "cmdbox")
 set(CPACK_PACKAGE_VENDOR "OpsTools")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A quick command paste tool for Ops engineers")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_PACKAGE_CONTACT "Maintainer <maintainer@example.com>")
+set(CPACK_PACKAGE_CONTACT "Maintainer <mingme47@gmail.com>")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 
 # Generate DEB package if on Debian/Ubuntu
