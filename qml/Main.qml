@@ -48,7 +48,7 @@ ApplicationWindow {
 
     Shortcut {
         sequence: "Ctrl+N"
-        onActivated: commandDialog.openForAdd()
+        onActivated: commandDialogView.openForAdd()
     }
     Item {
         states: State { name: "running" }

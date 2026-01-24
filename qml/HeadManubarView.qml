@@ -33,7 +33,7 @@ MenuBar {
                 implicitWidth: 40
                 implicitHeight: 32
                 color: menuBarItem.highlighted ? menuHoverColor : "transparent"
-                radius: 4
+                radius: 0
             }
         }
         
@@ -41,16 +41,6 @@ MenuBar {
         Menu {
             id: fileMenu
             title: qsTr("文件")
-            
-            background: Rectangle {
-                implicitWidth: 220
-                implicitHeight: fileMenu.contentHeight + 16
-                color: "#ffffff"
-                border.color: subtleBorder
-                border.width: 1
-                radius: 8
-                opacity: 1
-            }
             
             delegate: MenuItem {
                 id: fileMenuItem
@@ -140,16 +130,6 @@ MenuBar {
             id: editMenu
             title: qsTr("编辑")
             
-            background: Rectangle {
-                implicitWidth: 220
-                implicitHeight: editMenu.contentHeight + 16
-                color: "#ffffff"
-                border.color: subtleBorder
-                border.width: 1
-                radius: 8
-                opacity: 1
-            }
-            
             delegate: MenuItem {
                 id: editMenuItem
                 implicitWidth: 200
@@ -216,17 +196,7 @@ MenuBar {
         Menu {
             id: viewMenu
             title: qsTr("视图")
-            
-            background: Rectangle {
-                implicitWidth: 220
-                implicitHeight: viewMenu.contentHeight + 16
-                color: "#ffffff"
-                border.color: subtleBorder
-                border.width: 1
-                radius: 8
-                opacity: 1
-            }
-            
+
             delegate: MenuItem {
                 id: viewMenuItem
                 implicitWidth: 200
@@ -274,7 +244,6 @@ MenuBar {
             Action {
                 text: qsTr("显示侧边栏")
                 shortcut: "Ctrl+B"
-                checkable: true
                 checked: sidebarVisible
                 onTriggered: sidebarVisible = !sidebarVisible
             }
@@ -310,17 +279,7 @@ MenuBar {
         Menu {
             id: helpMenu
             title: qsTr("帮助")
-            
-            background: Rectangle {
-                implicitWidth: 220
-                implicitHeight: helpMenu.contentHeight + 16
-                color: "#ffffff"
-                border.color: subtleBorder
-                border.width: 1
-                radius: 8
-                opacity: 1
-            }
-            
+
             delegate: MenuItem {
                 id: helpMenuItem
                 implicitWidth: 200
