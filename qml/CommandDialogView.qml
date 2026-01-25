@@ -5,7 +5,7 @@ import Qt.labs.qmlmodels
 import QtQuick.Dialogs
 import CommandManager 1.0
 
-Dialog {
+Window {
     id: commandDialog
     property var model
     property int editIndex: -1
@@ -13,31 +13,27 @@ Dialog {
     
     model: CommandManager
     
-    modal: true
-    // 使用 x 和 y 手动居中，确保不会超出窗口
-    x: Math.round((parent.width - width) / 2)
-    y: Math.round((parent.height - height) / 2)
-    // 响应式宽度：最大不超过父窗口宽度的 80%，且不超过 480px
-    width: Math.min(480, parent.width * 0.8)
-    // 响应式高度：最大不超过父窗口高度的 75%
-    height: Math.min(implicitHeight, parent.height * 0.75)
-    padding: 0
+    // Window属性
+    modality: Qt.ApplicationModal
+    flags: Qt.Dialog | Qt.WindowCloseButtonHint
+    title: folderMode 
+            ? (editIndex === -1 ? qsTr("新建分组") : qsTr("编辑分组"))
+            : (editIndex === -1 ? qsTr("新建命令") : qsTr("编辑命令"))
     
-    // 移除默认按钮，使用自定义按钮
-    standardButtons: Dialog.NoButton
+    // 窗口尺寸
+    width: 480
+    minimumWidth: 400
+    minimumHeight: 300
+    height: folderMode ? 300 : 520
     
-    background: Rectangle {
-        color: "#ffffff"
-        radius: 12
-        border.color: "#e5e5e5"
-        border.width: 1
-    }
-
+    //color: "#ffffff"
+    
+    signal accepted()
+    signal rejected()
+    
     function groupText() {
-        if (!groupField) return ""
-        return groupField.editable
-                ? (groupField.editText !== "" ? groupField.editText : groupField.currentText)
-                : groupField.currentText
+        if (!groupFieldContainer) return ""
+        return groupFieldContainer.currentText || ""
     }
 
     function openForAdd() {
@@ -46,16 +42,20 @@ Dialog {
         titleFieldCmd.text = ""
         commandField.text = ""
         descField.text = ""
-        if (groupField) { groupField.currentIndex = -1; groupField.editText = "" }
-        commandDialog.open()
+        if (groupFieldContainer) { groupFieldContainer.currentText = "" }
+        commandDialog.show()
+        commandDialog.raise()
+        commandDialog.requestActivate()
     }
 
     function openForAddFolder() {
         editIndex = -1
         folderMode = true
         titleFieldFolder.text = ""
-        if (groupField) { groupField.currentIndex = -1; groupField.editText = "" }
-        commandDialog.open()
+        if (groupFieldContainer) { groupFieldContainer.currentText = "" }
+        commandDialog.show()
+        commandDialog.raise()
+        commandDialog.requestActivate()
     }
 
     function openForEdit(index, title, cmd, desc, group, isFolder) {
@@ -70,18 +70,23 @@ Dialog {
         commandField.text = cmd
         descField.text = desc
         
-        if (groupField) {
+        if (groupFieldContainer) {
             const g = (typeof group !== 'undefined') ? group : ""
-            const i = g !== "" ? groupField.find(g) : -1
-            if (i >= 0) {
-                groupField.currentIndex = i
-                groupField.editText = ""
-            } else {
-                groupField.currentIndex = -1
-                groupField.editText = g
-            }
+            groupFieldContainer.currentText = g
         }
-        commandDialog.open()
+        commandDialog.show()
+        commandDialog.raise()
+        commandDialog.requestActivate()
+    }
+    
+    function accept() {
+        accepted()
+        close()
+    }
+    
+    function reject() {
+        rejected()
+        close()
     }
 
     onAccepted: {
@@ -108,8 +113,16 @@ Dialog {
         }
     }
 
-    contentItem: ColumnLayout {
+    ColumnLayout {
+        anchors.fill: parent
         spacing: 0
+        
+        MouseArea {
+            anchors.fill: parent
+            z: -1
+            enabled: groupFieldContainer.popupVisible
+            onClicked: groupFieldContainer.popupVisible = false
+        }
         
         // 标题栏
         Rectangle {
@@ -342,41 +355,191 @@ Dialog {
                     font.weight: Font.Medium
                     color: "#525252"
                 }
-                
-                ComboBox {
-                    id: groupField
-                    editable: true
-                    model: commandDialog.model ? commandDialog.model.groups : []
+
+                Rectangle {
+                    id: groupFieldContainer
                     Layout.fillWidth: true
-                    font.pixelSize: 13
+                    height: 32
+                    color: "#fafafa"
+                    border.color: groupFieldContainer.activeFocus ? "#171717" : "#e5e5e5"
+                    border.width: groupFieldContainer.activeFocus ? 2 : 1
+                    radius: 6
+                    property string currentText: ""
+                    property bool popupVisible: false
                     
-                    background: Rectangle {
-                        color: groupField.pressed ? "#f5f5f5" : "#fafafa"
-                        border.color: groupField.activeFocus ? "#171717" : "#e5e5e5"
-                        border.width: groupField.activeFocus ? 2 : 1
-                        radius: 6
-                        
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
-                    }
-                    
-                    contentItem: Text {
-                        leftPadding: 12
-                        rightPadding: groupField.indicator.width + 12
-                        text: groupField.editText || groupField.displayText || "选择或输入分组名"
-                        font: groupField.font
-                        color: (groupField.editText || groupField.displayText) ? "#171717" : "#a3a3a3"
-                        verticalAlignment: Text.AlignVCenter
+                    Text {
+                        id: groupFieldText
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: parent.left
+                        anchors.leftMargin: 12
+                        anchors.right: groupFieldArrow.left
+                        anchors.rightMargin: 12
+                        text: groupFieldContainer.currentText || "选择分组"
+                        font.pixelSize: 13
+                        color: groupFieldContainer.currentText ? "#171717" : "#a3a3a3"
                         elide: Text.ElideRight
                     }
                     
-                    indicator: Text {
-                        x: groupField.width - width - 12
-                        y: (groupField.height - height) / 2
+                    Text {
+                        id: groupFieldArrow
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.right: parent.right
+                        anchors.rightMargin: 12
                         text: "▼"
                         font.pixelSize: 10
                         color: "#737373"
                     }
+                    
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            groupFieldContainer.popupVisible = !groupFieldContainer.popupVisible
+                            groupFieldContainer.forceActiveFocus()
+                        }
+                    }
+                    
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
+                    
+                    Popup {
+                        id: groupFieldPopup
+                        visible: groupFieldContainer.popupVisible
+                        x: 0
+                        y: {
+                            var preferredHeight = Math.min(200, groupFieldList.contentHeight)
+                            var spaceBelow = commandDialog.height - (groupFieldContainer.y + groupFieldContainer.height)
+                            var spaceAbove = groupFieldContainer.y
+                            
+                            if (spaceBelow >= preferredHeight) {
+                                return groupFieldContainer.height + 2
+                            } else if (spaceAbove >= preferredHeight) {
+                                return -preferredHeight - 2
+                            } else if (spaceBelow > spaceAbove) {
+                                return groupFieldContainer.height + 2
+                            } else {
+                                return -Math.min(preferredHeight, spaceAbove) - 2
+                            }
+                        }
+                        width: groupFieldContainer.width
+                        height: {
+                            var maxHeight = Math.min(200, groupFieldList.contentHeight)
+                            var spaceBelow = commandDialog.height - (groupFieldContainer.y + groupFieldContainer.height)
+                            var spaceAbove = groupFieldContainer.y
+                            
+                            if (y >= 0) { // 显示在下方
+                                return Math.min(maxHeight, spaceBelow - 4)
+                            } else { // 显示在上方
+                                return Math.min(maxHeight, spaceAbove - 4)
+                            }
+                        }
+                        padding: 1
+                        
+                        background: Rectangle {
+                            border.color: "#e5e5e5"
+                            border.width: 1
+                            radius: 6
+                            color: "#ffffff"
+                        }
+                        
+                        ListView {
+                            id: groupFieldList
+                            anchors.fill: parent
+                            clip: true
+                            model: commandDialog.model ? commandDialog.model.groups : ["1","2","3"]
+                            
+                            delegate: Item {
+                                width: groupFieldList.width
+                                height: 32
+                                
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 12
+                                    text: modelData
+                                    font.pixelSize: 13
+                                    color: "#171717"
+                                }
+                                
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    onClicked: {
+                                        groupFieldContainer.currentText = modelData
+                                        groupFieldContainer.popupVisible = false
+                                    }
+                                    //onEntered: parent.color = "#f5f5f5"
+                                    //onExited: parent.color = "transparent"
+                                }
+                                
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: parent.color
+                                }
+                            }
+                            
+                            ScrollIndicator.vertical: ScrollIndicator { }
+                        }
+                    }
                 }
+                // ComboBox {
+                //     id: groupField
+                //     editable: true
+                //     model: commandDialog.model ? commandDialog.model.groups : []
+                //     Layout.fillWidth: true
+                //     height: 32
+                //     font.pixelSize: 13
+                    
+                //     popup: Popup {
+                //         y: groupField.height
+                //         width: groupField.width
+                //         implicitHeight: contentItem.implicitHeight
+                //         padding: 1
+
+                //         contentItem: ListView {
+                //             clip: true
+                //             implicitHeight: contentHeight
+                //             model: groupField.popup.visible ? groupField.delegateModel : null
+                //             currentIndex: groupField.highlightedIndex
+
+                //             ScrollIndicator.vertical: ScrollIndicator { }
+                //         }
+
+                //         background: Rectangle {
+                //             border.color: "#e5e5e5"
+                //             border.width: 1
+                //             radius: 6
+                //         }
+                //     }
+                    
+                //     background: Rectangle {
+                //         //color: groupField.pressed ? "#f51e1e" : "#fafafa"
+                //         color: "#ffffff"
+                //         //border.color: groupField.activeFocus ? "#171717" : "#e5e5e5"
+                //         border.color: "#e5e5e5"
+                //         //border.width: groupField.activeFocus ? 2 : 1
+                //         border.width: 1
+                //         radius: 6
+                        
+                //         Behavior on border.color { ColorAnimation { duration: 150 } }
+                //     }
+                    
+                //     contentItem: Text {
+                //         leftPadding: 12
+                //         rightPadding: groupField.indicator.width + 12
+                //         text: groupField.editText || groupField.displayText || "选择或输入分组名"
+                //         font: groupField.font
+                //         color: (groupField.editText || groupField.displayText) ? "#171717" : "#a3a3a3"
+                //         verticalAlignment: Text.AlignVCenter
+                //         elide: Text.ElideRight
+                //     }
+                    
+                //     indicator: Text {
+                //         x: groupField.width - width - 12
+                //         y: (groupField.height - height) / 2
+                //         text: "▼"
+                //         font.pixelSize: 10
+                //         color: "#737373"
+                //     }
+                // }
             }
         }
         

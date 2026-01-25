@@ -155,5 +155,9 @@ ApplicationWindow {
         id: exportDialogView
     }
 
+    Loader {
+        id: pageLoader
+    }
+
     CommandBlok { id: previewWin }
 }
