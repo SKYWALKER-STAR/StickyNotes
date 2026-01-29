@@ -15,10 +15,8 @@ Window {
     
     // Window属性
     modality: Qt.ApplicationModal
-    flags: Qt.Dialog | Qt.WindowCloseButtonHint
-    title: folderMode 
-            ? (editIndex === -1 ? qsTr("新建分组") : qsTr("编辑分组"))
-            : (editIndex === -1 ? qsTr("新建命令") : qsTr("编辑命令"))
+    //flags: Qt.Dialog | Qt.WindowCloseButtonHint
+    title: editIndex === -1 ? qsTr("新建命令") : qsTr("编辑命令")
     
     // 窗口尺寸
     width: 480
@@ -32,8 +30,12 @@ Window {
     signal rejected()
     
     function groupText() {
-        if (!groupFieldContainer) return ""
-        return groupFieldContainer.currentText || ""
+        if (!groupField) return ""
+        // ComboBox.currentText is read-only; for editable combobox use editText.
+        const t = (typeof groupField.editText !== "undefined" && groupField.editText !== "")
+                    ? groupField.editText
+                    : groupField.currentText
+        return t || ""
     }
 
     function openForAdd() {
@@ -42,7 +44,10 @@ Window {
         titleFieldCmd.text = ""
         commandField.text = ""
         descField.text = ""
-        if (groupFieldContainer) { groupFieldContainer.currentText = "" }
+        if (groupField) {
+            groupField.currentIndex = -1
+            groupField.editText = ""
+        }
         commandDialog.show()
         commandDialog.raise()
         commandDialog.requestActivate()
@@ -52,7 +57,10 @@ Window {
         editIndex = -1
         folderMode = true
         titleFieldFolder.text = ""
-        if (groupFieldContainer) { groupFieldContainer.currentText = "" }
+        if (groupField) {
+            groupField.currentIndex = -1
+            groupField.editText = ""
+        }
         commandDialog.show()
         commandDialog.raise()
         commandDialog.requestActivate()
@@ -70,9 +78,9 @@ Window {
         commandField.text = cmd
         descField.text = desc
         
-        if (groupFieldContainer) {
+        if (groupField) {
             const g = (typeof group !== 'undefined') ? group : ""
-            groupFieldContainer.currentText = g
+            groupField.editText = g
         }
         commandDialog.show()
         commandDialog.raise()
@@ -120,8 +128,10 @@ Window {
         MouseArea {
             anchors.fill: parent
             z: -1
-            enabled: groupFieldContainer.popupVisible
-            onClicked: groupFieldContainer.popupVisible = false
+            enabled: groupField && groupField.popup && groupField.popup.visible
+            onClicked: {
+                if (groupField && groupField.popup) groupField.popup.close()
+            }
         }
         
         // 标题栏
@@ -137,42 +147,17 @@ Window {
                 
                 // 图标
                 Text {
-                    text: commandDialog.folderMode ? "📁" : "⌘"
+                    text: "⌘"
                     font.pixelSize: 20
                 }
                 
                 // 标题
                 Text {
-                    text: commandDialog.folderMode 
-                            ? (commandDialog.editIndex === -1 ? "新建分组" : "编辑分组")
-                            : (commandDialog.editIndex === -1 ? "新建命令" : "编辑命令")
+                    text: editIndex === -1 ? "新建命令" : "编辑命令"
                     font.pixelSize: 16
                     font.weight: Font.DemiBold
                     color: "#171717"
                     Layout.fillWidth: true
-                }
-                
-                // 关闭按钮
-                Rectangle {
-                    width: 28
-                    height: 28
-                    radius: 14
-                    color: closeBtn.containsMouse ? "#f5f5f5" : "transparent"
-                    
-                    Text {
-                        anchors.centerIn: parent
-                        text: "✕"
-                        font.pixelSize: 12
-                        color: "#737373"
-                    }
-                    
-                    MouseArea {
-                        id: closeBtn
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: commandDialog.reject()
-                    }
                 }
             }
             
@@ -195,6 +180,7 @@ Window {
             // 标题输入（命令模式）
             ColumnLayout {
                 Layout.fillWidth: true
+                Layout.topMargin: 0
                 spacing: 6
                 visible: !commandDialog.folderMode
                 
@@ -342,204 +328,67 @@ Window {
                     }
                 }
             }
-            
-            // 分组选择
-            ColumnLayout {
+        
+            ComboBox {
+                id: groupField
+                editable: true
+                model: commandDialog.model ? commandDialog.model.groups : []
                 Layout.fillWidth: true
-                spacing: 6
-                visible: !commandDialog.folderMode
-                
-                Text {
-                    text: "所属分组"
-                    font.pixelSize: 12
-                    font.weight: Font.Medium
-                    color: "#525252"
-                }
+                height: 32
+                font.pixelSize: 13
 
-                Rectangle {
-                    id: groupFieldContainer
-                    Layout.fillWidth: true
-                    height: 32
-                    color: "#fafafa"
-                    border.color: groupFieldContainer.activeFocus ? "#171717" : "#e5e5e5"
-                    border.width: groupFieldContainer.activeFocus ? 2 : 1
+
+                popup: Popup {
+                    y: groupField.height
+                    width: groupField.width
+                    implicitHeight: contentItem.implicitHeight
+                    padding: 1
+
+                    contentItem: ListView {
+                        clip: true
+                        implicitHeight: contentHeight
+                        model: groupField.popup.visible ? groupField.delegateModel : null
+                        currentIndex: groupField.highlightedIndex
+
+                        ScrollIndicator.vertical: ScrollIndicator { }
+                    }
+
+                    background: Rectangle {
+                        border.color: "#e5e5e5"
+                        border.width: 1
+                        radius: 6
+                    }
+                }
+                
+                background: Rectangle {
+                    //color: groupField.pressed ? "#f51e1e" : "#fafafa"
+                    color: "#ffffff"
+                    //border.color: groupField.activeFocus ? "#171717" : "#e5e5e5"
+                    border.color: "#e5e5e5"
+                    //border.width: groupField.activeFocus ? 2 : 1
+                    border.width: 1
                     radius: 6
-                    property string currentText: ""
-                    property bool popupVisible: false
-                    
-                    Text {
-                        id: groupFieldText
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left
-                        anchors.leftMargin: 12
-                        anchors.right: groupFieldArrow.left
-                        anchors.rightMargin: 12
-                        text: groupFieldContainer.currentText || "选择分组"
-                        font.pixelSize: 13
-                        color: groupFieldContainer.currentText ? "#171717" : "#a3a3a3"
-                        elide: Text.ElideRight
-                    }
-                    
-                    Text {
-                        id: groupFieldArrow
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.right: parent.right
-                        anchors.rightMargin: 12
-                        text: "▼"
-                        font.pixelSize: 10
-                        color: "#737373"
-                    }
-                    
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: {
-                            groupFieldContainer.popupVisible = !groupFieldContainer.popupVisible
-                            groupFieldContainer.forceActiveFocus()
-                        }
-                    }
                     
                     Behavior on border.color { ColorAnimation { duration: 150 } }
-                    
-                    Popup {
-                        id: groupFieldPopup
-                        visible: groupFieldContainer.popupVisible
-                        x: 0
-                        y: {
-                            var preferredHeight = Math.min(200, groupFieldList.contentHeight)
-                            var spaceBelow = commandDialog.height - (groupFieldContainer.y + groupFieldContainer.height)
-                            var spaceAbove = groupFieldContainer.y
-                            
-                            if (spaceBelow >= preferredHeight) {
-                                return groupFieldContainer.height + 2
-                            } else if (spaceAbove >= preferredHeight) {
-                                return -preferredHeight - 2
-                            } else if (spaceBelow > spaceAbove) {
-                                return groupFieldContainer.height + 2
-                            } else {
-                                return -Math.min(preferredHeight, spaceAbove) - 2
-                            }
-                        }
-                        width: groupFieldContainer.width
-                        height: {
-                            var maxHeight = Math.min(200, groupFieldList.contentHeight)
-                            var spaceBelow = commandDialog.height - (groupFieldContainer.y + groupFieldContainer.height)
-                            var spaceAbove = groupFieldContainer.y
-                            
-                            if (y >= 0) { // 显示在下方
-                                return Math.min(maxHeight, spaceBelow - 4)
-                            } else { // 显示在上方
-                                return Math.min(maxHeight, spaceAbove - 4)
-                            }
-                        }
-                        padding: 1
-                        
-                        background: Rectangle {
-                            border.color: "#e5e5e5"
-                            border.width: 1
-                            radius: 6
-                            color: "#ffffff"
-                        }
-                        
-                        ListView {
-                            id: groupFieldList
-                            anchors.fill: parent
-                            clip: true
-                            model: commandDialog.model ? commandDialog.model.groups : ["1","2","3"]
-                            
-                            delegate: Item {
-                                width: groupFieldList.width
-                                height: 32
-                                
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    anchors.left: parent.left
-                                    anchors.leftMargin: 12
-                                    text: modelData
-                                    font.pixelSize: 13
-                                    color: "#171717"
-                                }
-                                
-                                MouseArea {
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    onClicked: {
-                                        groupFieldContainer.currentText = modelData
-                                        groupFieldContainer.popupVisible = false
-                                    }
-                                    //onEntered: parent.color = "#f5f5f5"
-                                    //onExited: parent.color = "transparent"
-                                }
-                                
-                                Rectangle {
-                                    anchors.fill: parent
-                                    color: parent.color
-                                }
-                            }
-                            
-                            ScrollIndicator.vertical: ScrollIndicator { }
-                        }
-                    }
                 }
-                // ComboBox {
-                //     id: groupField
-                //     editable: true
-                //     model: commandDialog.model ? commandDialog.model.groups : []
-                //     Layout.fillWidth: true
-                //     height: 32
-                //     font.pixelSize: 13
-                    
-                //     popup: Popup {
-                //         y: groupField.height
-                //         width: groupField.width
-                //         implicitHeight: contentItem.implicitHeight
-                //         padding: 1
-
-                //         contentItem: ListView {
-                //             clip: true
-                //             implicitHeight: contentHeight
-                //             model: groupField.popup.visible ? groupField.delegateModel : null
-                //             currentIndex: groupField.highlightedIndex
-
-                //             ScrollIndicator.vertical: ScrollIndicator { }
-                //         }
-
-                //         background: Rectangle {
-                //             border.color: "#e5e5e5"
-                //             border.width: 1
-                //             radius: 6
-                //         }
-                //     }
-                    
-                //     background: Rectangle {
-                //         //color: groupField.pressed ? "#f51e1e" : "#fafafa"
-                //         color: "#ffffff"
-                //         //border.color: groupField.activeFocus ? "#171717" : "#e5e5e5"
-                //         border.color: "#e5e5e5"
-                //         //border.width: groupField.activeFocus ? 2 : 1
-                //         border.width: 1
-                //         radius: 6
-                        
-                //         Behavior on border.color { ColorAnimation { duration: 150 } }
-                //     }
-                    
-                //     contentItem: Text {
-                //         leftPadding: 12
-                //         rightPadding: groupField.indicator.width + 12
-                //         text: groupField.editText || groupField.displayText || "选择或输入分组名"
-                //         font: groupField.font
-                //         color: (groupField.editText || groupField.displayText) ? "#171717" : "#a3a3a3"
-                //         verticalAlignment: Text.AlignVCenter
-                //         elide: Text.ElideRight
-                //     }
-                    
-                //     indicator: Text {
-                //         x: groupField.width - width - 12
-                //         y: (groupField.height - height) / 2
-                //         text: "▼"
-                //         font.pixelSize: 10
-                //         color: "#737373"
-                //     }
-                // }
+                
+                contentItem: Text {
+                    leftPadding: 12
+                    rightPadding: groupField.indicator.width + 12
+                    text: groupField.editText || groupField.displayText || "选择或输入分组名"
+                    font: groupField.font
+                    color: (groupField.editText || groupField.displayText) ? "#171717" : "#a3a3a3"
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+                
+                indicator: Text {
+                    x: groupField.width - width - 12
+                    y: (groupField.height - height) / 2
+                    text: "▼"
+                    font.pixelSize: 10
+                    color: "#737373"
+                }
             }
         }
         

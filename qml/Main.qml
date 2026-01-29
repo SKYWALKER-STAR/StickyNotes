@@ -139,6 +139,9 @@ ApplicationWindow {
     CommandDialogView {
         id: commandDialogView
     }
+    CommandGroupView {
+        id: commandGroupView
+    }
 
     // 复制信息提示
     CopyNotificationView {

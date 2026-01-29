@@ -89,7 +89,7 @@ MenuBar {
             Action {
                 text: qsTr("新建分组")
                 shortcut: "Ctrl+Shift+N"
-                onTriggered: commandDialogView.openForAddFolder()
+                onTriggered: commandGroupView.openForAddFolder()
             }
             
             MenuSeparator {

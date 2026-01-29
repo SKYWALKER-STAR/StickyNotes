@@ -153,7 +153,6 @@ Rectangle {
                 
                 // 获取所有分组（文件夹）
                 var groups = commandManager.groups
-                console.log("SidebarTreeView: groups =", JSON.stringify(groups))
                 
                 for (var i = 0; i < groups.length; i++) {
                     var groupName = groups[i]
