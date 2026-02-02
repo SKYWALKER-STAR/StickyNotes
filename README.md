@@ -1,10 +1,12 @@
+<div align="center">
 <picture>
  <source media="(prefers-color-scheme: dark)" srcset="https://skywalker-star.github.io/icon/stickynotes-v2.png">
  <img alt="stickynotes banner" src="https://skywalker-star.github.io/icon/stickynotes-v2.png">
 </picture>
+</div>
 
 # Sticky Notes
-[![Date](https://img.shields.io/date/1764827464?style=plastic)]
+![Date](https://img.shields.io/date/1764827464?style=plastic)
 
 Sticky Notes is a versatile and lightweight tool designed for organizing and managing your notes and tasks efficiently. It supports a wide range of functionalities to enhance productivity.
 
@@ -33,9 +35,9 @@ Sticky Notes is a versatile and lightweight tool designed for organizing and man
 
 ### Dependencies
 
-* Qt >= 6.8 (Qt Quick module required)
-* CMake >= 3.16
-* C++ compiler (GCC / Clang / MSVC / MinGW)
+* **Qt** >= 6.8 (Qt Quick module required)
+* **CMake** >= 3.16
+* **C++ compiler (GCC / Clang / MSVC / MinGW)**
 
 ### Linux
 
