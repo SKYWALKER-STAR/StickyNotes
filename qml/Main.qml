@@ -111,6 +111,10 @@ ApplicationWindow {
                     // 命令被点击，显示复制提示
                     copyNotificationView.text = "已复制: " + cmd
                     copyNotificationView.open()
+
+                    if (mainDataListView && typeof mainDataListView.pulseCommand === 'function') {
+                        mainDataListView.pulseCommand(index)
+                    }
                 }
             }
             

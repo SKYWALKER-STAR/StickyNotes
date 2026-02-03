@@ -15,6 +15,11 @@ ListView {
     signal addCommandRequested()
     
     property string selectedGroup: "All"
+
+    // Sidebar 点击 command 时，用于触发主列表对应命令的悬浮动画
+    property int pulseSourceIndex: -1
+    property int pulseCounter: 0
+    property int pendingPulseSourceIndex: -1
     
     // 引用外部组件
     property var commandDialog: null
@@ -23,6 +28,23 @@ ListView {
     
     onSelectedGroupChanged: {
         listView.model = buildMainModel()
+    }
+
+    function pulseCommand(sourceIndex) {
+        pendingPulseSourceIndex = sourceIndex
+        pulseTriggerTimer.restart()
+    }
+
+    Timer {
+        id: pulseTriggerTimer
+        interval: 0
+        repeat: false
+        onTriggered: {
+            if (pendingPulseSourceIndex < 0) return
+            pulseSourceIndex = pendingPulseSourceIndex
+            pendingPulseSourceIndex = -1
+            pulseCounter = pulseCounter + 1
+        }
     }
     
     Connections {
@@ -36,11 +58,35 @@ ListView {
     }
     
     function buildMainModel() {
-        if (selectedGroup === "All" || selectedGroup === "" || !CommandManager) {
+        if (selectedGroup === "" || !CommandManager) {
             return []
         }
         
         var result = []
+
+        // 显示全部命令：按 folder 分组展示
+        if (selectedGroup === "All") {
+            var groups = CommandManager.groups || []
+            for (var g = 0; g < groups.length; g++) {
+                var groupName = groups[g]
+                if (!groupName || groupName === "All") continue
+
+                result.push({
+                    isFolder: true,
+                    title: groupName,
+                    commandContent: "",
+                    description: "",
+                    group: groupName,
+                    sourceIndex: -1
+                })
+
+                var groupCommands = CommandManager.commandsInFolder(groupName)
+                for (var iAll = 0; iAll < groupCommands.length; iAll++) {
+                    result.push(groupCommands[iAll])
+                }
+            }
+            return result
+        }
         
         // 添加folder条目
         result.push({
@@ -77,6 +123,7 @@ ListView {
     }
     
     delegate: ItemDelegate {
+        id: mainItem
         required property bool isFolder
         required property string title
         required property string commandContent
@@ -87,6 +134,11 @@ ListView {
         width: listView.width
         // 动态计算高度
         height: isFolder ? folderColumn.implicitHeight + 22 : commandColumn.implicitHeight + 22
+
+        property bool shouldPulse: !isFolder && sourceIndex === listView.pulseSourceIndex
+        property real pulseScale: 1.0
+        property real pulseLift: 0.0
+        property real pulseGlow: 0.0
 
         onClicked: {
             if (isFolder) return
@@ -104,6 +156,14 @@ ListView {
             border.color: subtleBorder
             border.width: 1
             radius: 6 // Sharper corners
+
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                color: textPrimary
+                opacity: pulseGlow
+                visible: opacity > 0
+            }
         }
 
         ColumnLayout {
@@ -204,10 +264,39 @@ ListView {
                 visible: description !== ""
             }
         }
-        //悬停动画
-        scale: hovered ? 1.01 : 1.0
-        Behavior on scale {
+
+        // 悬停 + 点击脉冲动画（上浮/轻微放大/高亮）
+        transform: Translate { y: pulseLift }
+        property real baseScale: hovered ? 1.01 : 1.0
+        scale: baseScale * pulseScale
+
+        Behavior on baseScale {
             NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
+        }
+
+        SequentialAnimation {
+            id: pulseAnim
+            running: false
+            ParallelAnimation {
+                NumberAnimation { target: mainItem; property: "pulseScale"; from: 1.0; to: 1.03; duration: 120; easing.type: Easing.OutCubic }
+                NumberAnimation { target: mainItem; property: "pulseLift"; from: 0; to: -6; duration: 120; easing.type: Easing.OutCubic }
+                NumberAnimation { target: mainItem; property: "pulseGlow"; from: 0.0; to: 0.10; duration: 120; easing.type: Easing.OutCubic }
+            }
+            ParallelAnimation {
+                NumberAnimation { target: mainItem; property: "pulseScale"; to: 1.0; duration: 220; easing.type: Easing.OutQuad }
+                NumberAnimation { target: mainItem; property: "pulseLift"; to: 0; duration: 220; easing.type: Easing.OutQuad }
+                NumberAnimation { target: mainItem; property: "pulseGlow"; to: 0.0; duration: 220; easing.type: Easing.OutQuad }
+            }
+        }
+
+        Connections {
+            target: listView
+            function onPulseCounterChanged() {
+                if (!shouldPulse) return
+                // 尝试把该条目滚到可见区域，再播放动画
+                listView.positionViewAtIndex(index, ListView.Contain)
+                pulseAnim.restart()
+            }
         }
     }
 }  // 关闭 ListView

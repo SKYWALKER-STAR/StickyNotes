@@ -55,6 +55,10 @@ Rectangle {
                 sidebar.groupSelected(item.name)
                 return
             }
+            if (item.parentGroup) {
+                sidebar.selectedGroup = item.parentGroup
+                sidebar.groupSelected(item.parentGroup)
+            }
             if (sidebar.previewWin && typeof sidebar.previewWin.openWith === 'function') {
                 sidebar.previewWin.openWith(item.name, item.command)
             } else if (sidebar.commandManager && item.command) {
@@ -466,7 +470,26 @@ Rectangle {
                             treeList.model = newModel
                         }
                     } else {
-                        // 点击命令项，触发复制
+                        // 点击命令项：先选中其父分组并展开，再触发复制
+                        if (modelData.parentGroup && selectedGroup !== modelData.parentGroup) {
+                            selectedGroup = modelData.parentGroup
+                            groupSelected(modelData.parentGroup)
+                        } else if (modelData.parentGroup) {
+                            // 即使同分组也触发一次，确保主区域刷新到该 folder 的完整内容
+                            groupSelected(modelData.parentGroup)
+                        }
+
+                        if (modelData.parentGroup) {
+                            var newModel2 = treeList.model.slice()
+                            for (var k = 0; k < newModel2.length; k++) {
+                                if (newModel2[k].isFolder && newModel2[k].name === modelData.parentGroup) {
+                                    newModel2[k].expanded = true
+                                    break
+                                }
+                            }
+                            treeList.model = newModel2
+                        }
+
                         if (commandManager && modelData.command) {
                             commandManager.copyToClipboard(modelData.command)
                             itemClicked(modelData.index, false, modelData.command)
