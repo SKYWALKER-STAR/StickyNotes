@@ -80,4 +80,6 @@ Use menu (⋮) → Import / Export. JSON schema is an array of objects:
 
 ## License ⚖
 
-MIT License
+GNU Lesser General Public License v3.0 or later (LGPL-3.0-or-later).
+
+See `LICENSE`, `COPYING` and `COPYING.LESSER`.
