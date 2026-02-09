@@ -35,7 +35,9 @@ Rectangle {
     CreateOptionView {
         id: createOptionView
         onAddFolderRequested: function(groupName) {
-            if (commandGroupView && typeof commandGroupView.openForAddFolder === 'function') {
+            if (commandGroupView && typeof commandGroupView.openForAddFolderInGroup === 'function') {
+                commandGroupView.openForAddFolderInGroup(groupName)
+            } else if (commandGroupView && typeof commandGroupView.openForAddFolder === 'function') {
                 commandGroupView.openForAddFolder()
             }
         }
@@ -59,8 +61,10 @@ Rectangle {
                 sidebar.commandDialog.openForAdd()
             }
         }
-        onAddFolderRequested: function() {
-            if (commandGroupView && typeof commandGroupView.openForAddFolder === 'function') {
+        onAddFolderRequested: function(groupName) {
+            if (commandGroupView && typeof commandGroupView.openForAddFolderInGroup === 'function') {
+                commandGroupView.openForAddFolderInGroup(groupName)
+            } else if (commandGroupView && typeof commandGroupView.openForAddFolder === 'function') {
                 commandGroupView.openForAddFolder()
             }
         }
@@ -425,7 +429,104 @@ Rectangle {
                 }
                 var result = []
                 var filter = (filterText || "").toLowerCase()
-                // 添加 "全部" 选项
+                var addedCmdKeys = {} // 防止重复添加命令
+
+                // 递归构建子树
+                // level: 子文件夹显示的层级，命令显示在 level+1
+                function addFolderChildren(parentName, level) {
+                    var subFolders = commandManager.foldersInFolder(parentName) || []
+                    for (var i = 0; i < subFolders.length; i++) {
+                        var folder = subFolders[i]
+                        var folderName = folder.title
+                        var folderMatch = !filter || folderName.toLowerCase().indexOf(filter) !== -1
+
+                        // 该文件夹下的直属命令
+                        var cmds = commandManager.commandsInFolder(folderName) || []
+                        var filteredCmds = []
+                        for (var j = 0; j < cmds.length; j++) {
+                            var cmd = cmds[j]
+                            if (!filter || cmd.title.toLowerCase().indexOf(filter) !== -1 || folderMatch) {
+                                filteredCmds.push(cmd)
+                            }
+                        }
+
+                        // 检查子文件夹是否有匹配（决定是否显示此文件夹）
+                        var subSubFolders = commandManager.foldersInFolder(folderName) || []
+                        var hasDescendantMatch = folderMatch || filteredCmds.length > 0
+                        if (!hasDescendantMatch && filter) {
+                            for (var df = 0; df < subSubFolders.length; df++) {
+                                if (subSubFolders[df].title.toLowerCase().indexOf(filter) !== -1) {
+                                    hasDescendantMatch = true
+                                    break
+                                }
+                                var deepCmds = commandManager.commandsInFolder(subSubFolders[df].title) || []
+                                for (var dc = 0; dc < deepCmds.length; dc++) {
+                                    if (deepCmds[dc].title.toLowerCase().indexOf(filter) !== -1) {
+                                        hasDescendantMatch = true
+                                        break
+                                    }
+                                }
+                                if (hasDescendantMatch) break
+                            }
+                        }
+
+                        if (!filter || hasDescendantMatch) {
+                            result.push({
+                                name: folderName,
+                                displayName: folderName,
+                                icon: "📂",
+                                isFolder: true,
+                                level: level,
+                                expanded: false,
+                                childCount: filteredCmds.length + subSubFolders.length,
+                                parentGroup: parentName || "All",
+                                index: -1
+                            })
+
+                            // 递归添加子目录
+                            addFolderChildren(folderName, level + 1)
+
+                            // 添加该文件夹下的命令
+                            for (var k = 0; k < filteredCmds.length; k++) {
+                                var c = filteredCmds[k]
+                                var cKey = folderName + "|" + c.sourceIndex
+                                if (!addedCmdKeys[cKey]) {
+                                    addedCmdKeys[cKey] = true
+                                    result.push({
+                                        name: c.title,
+                                        displayName: c.title,
+                                        icon: "📄",
+                                        isFolder: false,
+                                        level: level + 1,
+                                        expanded: false,
+                                        childCount: 0,
+                                        parentGroup: folderName,
+                                        index: c.sourceIndex,
+                                        command: c.commandContent,
+                                        description: c.description || ""
+                                    })
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 计算根级别信息
+                var rootFolders = commandManager.foldersInFolder("") || []
+                var allFolders = commandManager.foldersInFolder("All") || []
+                var rootCmdsAll = commandManager.commandsInFolder("All") || []
+                var rootCmdsEmpty = commandManager.commandsInFolder("") || []
+                var totalRootChildren = rootFolders.length + allFolders.length
+                for (var ra = 0; ra < rootCmdsAll.length; ra++) {
+                    if (!filter || rootCmdsAll[ra].title.toLowerCase().indexOf(filter) !== -1)
+                        totalRootChildren++
+                }
+                for (var re = 0; re < rootCmdsEmpty.length; re++) {
+                    if (!filter || rootCmdsEmpty[re].title.toLowerCase().indexOf(filter) !== -1)
+                        totalRootChildren++
+                }
+
+                // "全部" 虚拟根节点
                 result.push({
                     name: "All",
                     displayName: "全部命令",
@@ -433,53 +534,40 @@ Rectangle {
                     isFolder: true,
                     level: 0,
                     expanded: true,
-                    childCount: 0,
+                    childCount: totalRootChildren,
+                    parentGroup: "",
                     index: -1
                 })
-                // 获取所有分组（文件夹）
-                var groups = commandManager.groups
-                for (var i = 0; i < groups.length; i++) {
-                    var groupName = groups[i]
-                    if (groupName === "All") continue
-                    var commands = commandManager.commandsInFolder(groupName)
-                    // 过滤分组和命令
-                    var groupMatch = groupName.toLowerCase().indexOf(filter) !== -1
-                    var filteredCmds = []
-                    for (var j = 0; j < commands.length; j++) {
-                        var cmd = commands[j]
-                        if (!filter || cmd.title.toLowerCase().indexOf(filter) !== -1 || groupMatch) {
-                            filteredCmds.push(cmd)
-                        }
-                    }
-                    if (groupMatch || filteredCmds.length > 0) {
+
+                // 添加根级别文件夹及其子树 (group == "")
+                addFolderChildren("", 1)
+                // 添加根级别文件夹及其子树 (group == "All")
+                addFolderChildren("All", 1)
+
+                // 添加根级别命令（group == "All" 或 group == ""）
+                var allRootCmds = rootCmdsAll.concat(rootCmdsEmpty)
+                for (var r = 0; r < allRootCmds.length; r++) {
+                    var rc = allRootCmds[r]
+                    if (filter && rc.title.toLowerCase().indexOf(filter) === -1) continue
+                    var rcKey = (rc.group || "All") + "|" + rc.sourceIndex
+                    if (!addedCmdKeys[rcKey]) {
+                        addedCmdKeys[rcKey] = true
                         result.push({
-                            name: groupName,
-                            displayName: groupName,
-                            icon: "📂",
-                            isFolder: true,
-                            level: 0,
+                            name: rc.title,
+                            displayName: rc.title,
+                            icon: "📄",
+                            isFolder: false,
+                            level: 1,
                             expanded: false,
-                            childCount: filteredCmds.length,
-                            index: -1
+                            childCount: 0,
+                            parentGroup: "All",
+                            index: rc.sourceIndex,
+                            command: rc.commandContent,
+                            description: rc.description || ""
                         })
-                        for (var k = 0; k < filteredCmds.length; k++) {
-                            var cmd2 = filteredCmds[k]
-                            result.push({
-                                name: cmd2.title,
-                                displayName: cmd2.title,
-                                icon: "📄",
-                                isFolder: false,
-                                level: 1,
-                                expanded: false,
-                                childCount: 0,
-                                parentGroup: groupName,
-                                index: cmd2.sourceIndex,
-                                command: cmd2.commandContent,
-                                description: cmd2.description || ""
-                            })
-                        }
                     }
                 }
+
                 console.log("SidebarTreeView: buildTreeModel result count =", result.length)
                 return result
             }
@@ -492,20 +580,27 @@ Rectangle {
                 property bool isExpanded: modelData.expanded || false
                 property int itemLevel: modelData.level || 0
                 
-                // 只显示顶级项目，或者父级展开的子项
+                // 只显示顶级项目，或者所有祖先都展开的子项
                 visible: {
                     if (itemLevel === 0) return true
-                    // 查找父级是否展开
-                    var parentGroup = modelData.parentGroup
+                    // 检查所有祖先是否都展开
                     var view = ListView.view
                     if (!view || !view.model) return false
-                    for (var i = 0; i < view.model.length; i++) {
-                        var item = view.model[i]
-                        if (item.isFolder && item.name === parentGroup) {
-                            return item.expanded
+                    var parentName = modelData.parentGroup
+                    while (parentName && parentName !== "") {
+                        var found = false
+                        for (var i = 0; i < view.model.length; i++) {
+                            var item = view.model[i]
+                            if (item.isFolder && item.name === parentName) {
+                                if (!item.expanded) return false
+                                parentName = item.parentGroup || ""
+                                found = true
+                                break
+                            }
                         }
+                        if (!found) return false
                     }
-                    return false
+                    return true
                 }
                 height: visible ? 36 : 0
                 

@@ -133,11 +133,7 @@ void CommandManager::editFolder(int index, const QString &title, const QString &
 }
 QVariantList CommandManager::commandsInFolder(const QString &folderName) const {
     QVariantList out;
-    //qDebug() << "commandsInFolder: folderName=" << folderName;
-    //qDebug() << "allCommands count=" << m_allCommands.size() << ", filtered count=" << m_filteredCommands.size();
-    
     for (const auto &c : m_filteredCommands) {
-        // membership: command.group equals folder title
         if (!c.isFolder && c.group == folderName) {
             QVariantMap m;
             m["title"] = c.title;
@@ -153,13 +149,24 @@ QVariantList CommandManager::commandsInFolder(const QString &folderName) const {
                     break;
                 }
             }
-            m["sourceIndex"] = filteredIdx; // -1 if filtered out
+            m["sourceIndex"] = filteredIdx;
             out << m;
-            //qDebug() << "commandsInFolder: add item title=" << c.title << ", group=" << c.group << ", sourceIndex=" << filteredIdx;
         }
     }
-    //qDebug() << "commandsInFolder: result size=" << out.size();
-    //qDebug() << "QVL:" << out;
+    return out;
+}
+
+QVariantList CommandManager::foldersInFolder(const QString &parentGroup) const {
+    QVariantList out;
+    for (const auto &c : m_filteredCommands) {
+        if (c.isFolder && c.group == parentGroup) {
+            QVariantMap m;
+            m["title"] = c.title;
+            m["group"] = c.group;
+            m["isFolder"] = true;
+            out << m;
+        }
+    }
     return out;
 }
 
@@ -231,17 +238,33 @@ void CommandManager::removeFolder(const QString &folderTitle, bool deleteCommand
     if (folderName.isEmpty() || folderName == QStringLiteral("All"))
         return;
 
+    // Collect all descendant folder names recursively
+    QStringList toRemove;
+    toRemove << folderName;
+    bool found = true;
+    while (found) {
+        found = false;
+        for (const auto &entry : m_allCommands) {
+            if (entry.isFolder && toRemove.contains(entry.group) && !toRemove.contains(entry.title)) {
+                toRemove << entry.title;
+                found = true;
+            }
+        }
+    }
+
     bool changed = false;
     for (int i = m_allCommands.count() - 1; i >= 0; --i) {
         const auto &entry = m_allCommands[i];
 
-        if (entry.isFolder && entry.title == folderName) {
+        // Remove folder entries in the subtree
+        if (entry.isFolder && toRemove.contains(entry.title)) {
             m_allCommands.removeAt(i);
             changed = true;
             continue;
         }
 
-        if (!entry.isFolder && entry.group == folderName) {
+        // Handle commands belonging to any folder in the subtree
+        if (!entry.isFolder && toRemove.contains(entry.group)) {
             if (deleteCommands) {
                 m_allCommands.removeAt(i);
             } else {

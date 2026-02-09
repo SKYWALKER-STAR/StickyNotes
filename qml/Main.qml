@@ -125,12 +125,6 @@ ApplicationWindow {
 
             onCommandManagerChanged: {
                 console.log("SidebarTreeView: commandManager changed:", CommandManager)
-                if (CommandManager) {
-                    console.log("CommandManager is valid")
-                    treeList.model = treeList.buildTreeModel()
-                } else {
-                    console.log("CommandManager is null!")
-                }
             }
         }
         // 主内容区域

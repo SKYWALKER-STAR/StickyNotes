@@ -46,6 +46,7 @@ public:
     Q_INVOKABLE bool exportCommands(const QUrl &fileUrl);
     Q_INVOKABLE bool importCommands(const QUrl &fileUrl);
     Q_INVOKABLE QVariantList commandsInFolder(const QString &folderName) const;
+    Q_INVOKABLE QVariantList foldersInFolder(const QString &parentGroup) const;
     Q_INVOKABLE void initialize(); // Delayed initialization
     Q_INVOKABLE QStringList groups();
     Q_INVOKABLE void debug();

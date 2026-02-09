@@ -10,6 +10,7 @@ Window {
     property var model
     property int editIndex: -1
     property bool folderMode: false
+    property string parentGroup: ""
     
     model: CommandManager
     
@@ -33,6 +34,17 @@ Window {
     function openForAddFolder() {
         editIndex = -1
         folderMode = true
+        parentGroup = ""
+        titleFieldFolder.text = ""
+        groupDialog.show()
+        groupDialog.raise()
+        groupDialog.requestActivate()
+    }
+
+    function openForAddFolderInGroup(group) {
+        editIndex = -1
+        folderMode = true
+        parentGroup = group || ""
         titleFieldFolder.text = ""
         groupDialog.show()
         groupDialog.raise()
@@ -72,7 +84,7 @@ Window {
 
     onAccepted: {
         if (!model) return
-        const g = groupText()
+        const g = parentGroup
 
         if (editIndex === -1)
             model.addFolder(titleFieldFolder.text, g)
