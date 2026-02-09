@@ -39,31 +39,6 @@ ToolBar {
             }
         }
 
-        // 侧边栏切换按钮
-        ToolButton {
-            id: sidebarToggle
-            Layout.preferredWidth: 36
-            Layout.preferredHeight: 36
-            onClicked: sidebarVisible = !sidebarVisible
-            
-            background: Rectangle {
-                radius: 6
-                color: sidebarToggle.pressed ? "#f0f0f0" : (sidebarToggle.hovered ? "#f5f5f5" : "transparent")
-            }
-            
-            contentItem: Label {
-                text: sidebarVisible ? "◀" : "▶"
-                font.pixelSize: 12
-                color: textSecondary
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-            }
-            
-            ToolTip.visible: hovered
-            ToolTip.text: sidebarVisible ? "隐藏侧边栏" : "显示侧边栏"
-            ToolTip.delay: 500
-        }
-
         TextField {
             id: searchInput
             placeholderText: "搜索命令..."
@@ -71,26 +46,45 @@ ToolBar {
             Layout.preferredHeight: 44
             Layout.alignment: Qt.AlignVCenter
             verticalAlignment: Text.AlignVCenter
-            leftPadding: 12
-            rightPadding: 12
+            leftPadding: 14
+            rightPadding: 32
             font.pixelSize: 14
             onTextChanged: {
                 if (CommandManager) 
                     CommandManager.setFilter(text)
             }
             background: Rectangle {
-                color: "#f5f5f5" // Slight gray for input area
-                radius: 6
-                border.color: "transparent" // Flat style usually has no border or minimal
-                border.width: 0 
-                
-                // Add a focus indicator
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 6
-                    color: "transparent"
-                    border.color: searchInput.activeFocus ? primary : "transparent"
-                    border.width: 1.5
+                color: "#f8f8f8"
+                radius: 10
+                border.color: searchInput.activeFocus ? primary : "#e5e5e5"
+                border.width: searchInput.activeFocus ? 2 : 1
+                Behavior on border.color { ColorAnimation { duration: 120 } }
+                Behavior on border.width { NumberAnimation { duration: 120 } }
+            }
+
+            ToolButton {
+                id: headerClearBtn
+                visible: searchInput.text.length > 0
+                anchors.right: parent.right
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                width: 22
+                height: 22
+                flat: true
+                contentItem: Label {
+                    text: "✕"
+                    font.pixelSize: 11
+                    color: textSecondary
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                background: Rectangle {
+                    radius: 11
+                    color: parent.hovered ? "#e5e5e5" : "transparent"
+                }
+                onClicked: {
+                    searchInput.text = ""
+                    searchInput.forceActiveFocus()
                 }
             }
         }

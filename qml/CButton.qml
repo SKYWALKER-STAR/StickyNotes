@@ -4,7 +4,7 @@ import QtQuick.Controls 2.15
 Button {
     id: control
     property string theme: "primary" // primary, warning, danger, success, neutral
-
+    flat: true
     font.bold: true
 
     property color mainColor: {

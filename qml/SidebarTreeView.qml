@@ -339,16 +339,45 @@ Rectangle {
                     placeholderText: "搜索目录或命令"
                     font.pixelSize: 13
                     Layout.fillWidth: true
-                    leftPadding: 8
-                    rightPadding: 8
+                    leftPadding: 12
+                    rightPadding: 28
                     height: 32
                     background: Rectangle {
-                        radius: 6
-                        color: "#f4f4f4"
-                        border.color: sidebar.subtleBorder
+                        radius: 8
+                        color: "#f8f8f8"
+                        border.color: searchField.activeFocus ? primary : subtleBorder
+                        border.width: searchField.activeFocus ? 2 : 1
+                        Behavior on border.color { ColorAnimation { duration: 120 } }
+                        Behavior on border.width { NumberAnimation { duration: 120 } }
                     }
                     onTextChanged: {
                         treeList.model = treeList.buildTreeModel(searchField.text)
+                    }
+
+                    ToolButton {
+                        id: sidebarClearBtn
+                        visible: searchField.text.length > 0
+                        anchors.right: parent.right
+                        anchors.rightMargin: 6
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 20
+                        height: 20
+                        flat: true
+                        contentItem: Label {
+                            text: "✕"
+                            font.pixelSize: 10
+                            color: textSecondary
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        background: Rectangle {
+                            radius: 10
+                            color: parent.hovered ? "#e5e5e5" : "transparent"
+                        }
+                        onClicked: {
+                            searchField.text = ""
+                            searchField.forceActiveFocus()
+                        }
                     }
                 }
             }
