@@ -5,10 +5,10 @@
 </picture>
 </div>
 
-# Sticky Notes
+# Sticky Note
 ![Date](https://img.shields.io/date/1764827464?style=plastic)
 
-Sticky Notes is a versatile and lightweight tool designed for organizing and managing your notes and tasks efficiently. It supports a wide range of functionalities to enhance productivity.
+Sticky Note is a versatile and lightweight tool designed for organizing and managing your notes and tasks efficiently. It supports a wide range of functionalities to enhance productivity.
 
 ## Table of Contents
 
