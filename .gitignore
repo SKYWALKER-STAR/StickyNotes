@@ -41,6 +41,7 @@ CMakeLists.txt.user
 *.pro.user.*
 *.qmake.stash
 .qmake.cache
+*.pro
 
 # VS Code specific
 .vscode/
@@ -64,3 +65,7 @@ _CPack_Packages/
 
 # Dist
 dist
+*.ico
+
+# NSIS
+*.nsi

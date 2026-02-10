@@ -12,6 +12,7 @@ qt_add_executable(snote
     src/main.cpp
     src/CommandManager.cpp
     src/include/CommandManager.h
+    stickynotes.rc
 )
 
 # 生成相对当前源目录的相对路径，如 qml/Foo.qml
